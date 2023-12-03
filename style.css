@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt&family=Roboto:wght@500&display=swap');
+
+
+html {
+  height: 100%;
+  width: 100%;
+}
+
+.name{
+  font-size: 1em;
+  font-weight: bold;
+  font-family: Arial;
+  color: white;
+  background-color: black;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.content{
+  font-size: 1em;
+  font-weight: bold;
+  font-family: Arial;
+  padding: 5px;
+}
+
+.message{
+  background-color: gray;
+  display: inline-flex;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.spacer{
+  margin: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: left;
+}
+
+.name_you{
+  font-size: 1em;
+  font-weight: bold;
+  font-family: Arial;
+  background-color: white;
+  color: black;
+  padding: 5px;
+  border-radius: 5px;
+  margin-left: auto;
+}
+
+.input{
+  text-align: center;
+  background-color: black;
+  color: lightgray;
+  font-family: 'Roboto', sans-serif;
+  width: 75%;
+  height: 20px;
+}
+
+#chat{
+  overflow-y: scroll;
+  justify-content: left;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(100% - 84px);
+}
+
+#controlbar{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: gray;
+  padding: 10px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+#message_input{
+  font-size: 2em;
+  height: 50px !important;
+  width: 100% !important;
+  border: 5px solid darkgray;
+  border-radius: 5px;
+}
+
+#load_history{
+  border: 1px solid darkgray;
+}
+
+#load_history:active{
+  background-color: gray;
+}
