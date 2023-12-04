@@ -1,8 +1,13 @@
-
 // thank you stackoverflow
 
+var chatwindow = document.getElementById('chat')
 
 function render_message(user, content) {
+
+  if (user === lastName && sentMessages.has(content)) {
+    return;
+  }
+
   let spacerDiv = document.createElement('div');
   spacerDiv.classList.add('spacer');
 
@@ -95,103 +100,108 @@ function to_bottom(element) {
   element.scrollTop = element.scrollHeight;
 }
 
-// verification script
-function verify(url) {
-  fetch(url + '/KFCR_verification')
+// Initialize variables
+var lastAddress = '';
+var lastName = '';
+var lastMessageID = -15; // burner value
+var displayedIDs = new Set(); // Set to keep track of displayed IDs
+var sentMessages = new Set(); // Set to keep track of sent messages
+
+// Connect button event listener
+document.getElementById('connect').addEventListener('click', function(event) {
+  lastAddress = document.getElementById('address').value;
+  lastName = document.getElementById('username').value;
+
+  // Reset variables
+  lastMessageID = -15;
+  displayedIDs.clear();
+  sentMessages.clear();
+
+  // Verify server
+  if (lastAddress != '') {
+  fetch(`${lastAddress}/KFCR_verification`)
     .then(response => {
       if (!response.ok) {
-        return false
+        render_system_message(`Failed to handshake with server, received error code ${response.status}`)
+        console.error("Failed to verify server");
+        lastAddress = '' // to prevent server spam
       } else {
-        return true
+        // Fetch last 50 messages
+        fetch(`${lastAddress}/messages/last/50`)
+          .then(response => response.json())
+          .then(data => {
+            if (Array.isArray(data)) {
+              lastMessageID = Math.max(...data.map(item => Number(item.id)));
+              console.log(`Last ID: ${lastMessageID}`);
+              // Reverse the order of the messages
+              data.reverse().forEach(function(message) {
+                if (!message.sys) {
+                  render_message(message.user, message.content);
+                } else {
+                  render_system_message(message.content);
+                }
+              });
+            }
+          });
       }
-    })
-}
-
-// send attempt
-
-function send(msg_content, user, url) {
-  fetch(url + '/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      "user": user,
-      "content": msg_content
-    })
-  })
-    .then(response => {
-      if (!response.ok) {
-        render_system_message("failed to post message.")
-      }
-    })
-};
-
-function clear_field(text) {
-  text.value = ""
-};
-
-
-// message submitted
-
-let message = document.getElementById('message_input');
-
-let form = document.getElementById('controlbar');
-
-let textFields = document.querySelectorAll('.config');
-
-let chatwindow = document.getElementById('chat');
-
-let load_history = document.getElementById('connect');
-
-message.addEventListener('keydown', function(event) {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    render_sent(message.value);
-    send(message.value, document.getElementById('username').value, document.getElementById('address').value);
-    clear_field(message);
+    });
+  } else {
+    render_system_message("Nice try, silly.");
   }
-})
-
-load_history.addEventListener('click', function(event) {
-  console.log(event)
-  fetch(document.getElementById('address').value + '/messages')
-    .then(response => {
-      if (!response.ok) {
-        render_system_message("failed to load history.")
-      }
-      return response.json()
-    })
-    .then(data => {
-      data.forEach(function(message_store) {
-        if (message_store.sys == false) {
-          render_message(message_store.user, message_store.content)
-        } else {
-          render_system_message(message_store.content)
-        }
-      })
-    })
-})
-
-// receiver
-
-var previousContent = {
-  "user": "",
-  "content": ""
-}
+});
 
 setInterval(() => {
-  fetch(document.getElementById('address').value + '/messages/latest', {
-    headers: {
-      'Cache-Control': 'no-store'
+  if (lastAddress != "") {
+    fetch(`${lastAddress}/messages/sinceid/${lastMessageID}`)
+      .then(response => response.json())
+      .then(data => {
+        data.forEach(message => {
+          if (message.id > lastMessageID && !displayedIDs.has(message.id)) {
+            displayedIDs.add(message.id); // Add the ID to the set of displayed IDs
+            if (!message.sys) {
+              render_message(message.user, message.content);
+            } else {
+              render_system_message(message.content);
+            }
+            lastMessageID = message.id; // Update the lastMessageId to the latest message ID
+          }
+        });
+      })
+      .catch(error => {
+        render_system_message(`JS error: ${error}`)
+        console.log(error)
+      }); // Handle any error
+  }
+}, 1000); // Check interval
+
+// Send a message
+document.getElementById('message_input').addEventListener('keydown', function(event) {
+  if (event.key === 'Enter') {
+    var messageContent = this.value;
+    this.value = ''; // Clear the input
+
+    // Check if the message has been sent before
+    if (!sentMessages.has(messageContent)) {
+      // Send the message
+      fetch(`${lastAddress}/messages/post`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user: lastName,
+          content: messageContent
+        })
+      })
+        .then(response => {
+          if (!response.ok) {
+            render_system_message(`Failed to send message, got error code ${response.status}`)
+            console.error("Failed to send message");
+          } else {
+            render_sent(messageContent);
+            sentMessages.add(messageContent); // Add the message to the set of sent messages
+          }
+        });
     }
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (JSON.stringify(data) !== JSON.stringify(previousContent) && data.user !== document.getElementById('username').value) {
-        render_message(data.user, data.content);
-        previousContent = data;
-      }
-    })
-    .catch(error => void (0)); // it's probably fine
-}, 1000);  // check interval
+  }
+});
