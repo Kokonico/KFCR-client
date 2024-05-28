@@ -179,6 +179,7 @@ document.getElementById('message_input').addEventListener('keydown', function(ev
   if (event.key === 'Enter') {
     var messageContent = this.value;
     this.value = ''; // Clear the input
+    render_sent(messageContent); // render message
 
     // Check if the message has been sent before
     if (!sentMessages.has(messageContent)) {
@@ -198,7 +199,6 @@ document.getElementById('message_input').addEventListener('keydown', function(ev
             render_system_message(`Failed to send message, got error code ${response.status}`)
             console.error("Failed to send message");
           } else {
-            render_sent(messageContent);
             sentMessages.add(messageContent); // Add the message to the set of sent messages
           }
         });
